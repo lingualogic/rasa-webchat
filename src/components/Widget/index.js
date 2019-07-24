@@ -2,6 +2,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+
+import { ServiceManager, SPEECH_SPEAK_SERVICE } from 'speech-react';
+
 import {
   toggleChat,
   openChat,
@@ -29,12 +32,14 @@ class Widget extends Component {
   constructor(props) {
     super(props);
     this.messages = [];
+    this.speakService = ServiceManager.get(SPEECH_SPEAK_SERVICE);
     setInterval(() => {
       if (this.messages.length > 0) {
         this.dispatchMessage(this.messages.shift());
       }
     }, this.props.interval);
   }
+
 
   componentDidMount() {
     const { socket, storage } = this.props;
@@ -46,14 +51,14 @@ class Widget extends Component {
     this.props.dispatch(pullSession());
 
     // Request a session from server
-    const local_id = this.getSessionId();
+    const localId = this.getSessionId();
     socket.on('connect', () => {
-      socket.emit('session_request', ({ 'session_id': local_id }));
+      socket.emit('session_request', ({ 'session_id': localId }));
     });
 
     // When session_confirm is received from the server:
-    socket.on('session_confirm', (remote_id) => {
-      console.log(`session_confirm:${socket.id} session_id:${remote_id}`);
+    socket.on('session_confirm', (remoteId) => {
+      console.log(`session_confirm:${socket.id} session_id:${remoteId}`);
 
       // Store the initial state to both the redux store and the storage, set connected to true
       this.props.dispatch(connectServer());
@@ -63,14 +68,13 @@ class Widget extends Component {
       If the local_id is null or different from the remote_id,
       start a new session.
       */
-      if (local_id !== remote_id) {
-
+      if (localId !== remoteId) {
         // storage.clear();
         // Store the received session_id to storage
 
-        storeLocalSession(storage, SESSION_NAME, remote_id);
+        storeLocalSession(storage, SESSION_NAME, remoteId);
         this.props.dispatch(pullSession());
-        this.trySendInitPayload()
+        this.trySendInitPayload();
       } else {
         // If this is an existing session, it's possible we changed pages and want to send a
         // user message when we land.
@@ -119,8 +123,8 @@ class Widget extends Component {
     const { storage } = this.props;
     // Get the local session, check if there is an existing session_id
     const localSession = getLocalSession(storage, SESSION_NAME);
-    const local_id = localSession? localSession.session_id: null;
-    return local_id;
+    const localId = localSession ? localSession.session_id: null;
+    return localId;
   }
 
   // TODO: Need to erase redux store on load if localStorage
@@ -143,12 +147,12 @@ class Widget extends Component {
     if (!initialized && connected && (((isChatOpen && isChatVisible) || embedded))) {
       // Only send initial payload if the widget is connected to the server but not yet initialized
 
-      const session_id = this.getSessionId();
+      const sessionId = this.getSessionId();
 
       // check that session_id is confirmed
-      if (!session_id) return
-      console.log("sending init payload", session_id)
-      socket.emit('user_uttered', { message: initPayload, customData, session_id: session_id });
+      if (!sessionId) return;
+      console.log("sending init payload", sessionId);
+      socket.emit('user_uttered', { message: initPayload, customData, session_id: sessionId });
       this.props.dispatch(initialize());
     }
   }
@@ -157,9 +161,24 @@ class Widget extends Component {
     this.props.dispatch(toggleChat());
   };
 
+  speak(text) {
+    if (this.speakService) {
+      if (this.speakService.active) {
+        this.speakService.language = 'en';
+        this.speakService.text = text;
+        this.speakService.start();
+      }
+    }
+  }
+
   dispatchMessage(message) {
+    // console.log('Message:', message);
     if (Object.keys(message).length === 0) {
       return;
+    }
+    if (message.text) {
+      // console.log('Textnachricht:', message.text);
+      this.speak(message.text);
     }
     if (isText(message)) {
       this.props.dispatch(addResponseMessage(message.text));
@@ -253,7 +272,7 @@ Widget.propTypes = {
 
 Widget.defaultProps = {
   isChatOpen: false,
-  isChatVisible: true,
+  isChatVisible: true
 };
 
 export default connect(mapStateToProps)(Widget);

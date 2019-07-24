@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import Header from './components/Header';
 import Messages from './components/Messages';
+import Speaker from './components/Speaker';
+
 import Sender from './components/Sender';
 import './style.scss';
 
@@ -21,6 +23,7 @@ const Conversation = props =>
       profileAvatar={props.profileAvatar}
       params={props.params}
     />
+    <Speaker />  
     <Sender
       sendMessage={props.sendMessage}
       disabledInput={props.disabledInput}
@@ -33,6 +36,7 @@ Conversation.propTypes = {
   sendMessage: PropTypes.func,
   profileAvatar: PropTypes.string,
   toggleChat: PropTypes.func,
+  toggleSpeak: PropTypes.func,
   showCloseButton: PropTypes.bool,
   disabledInput: PropTypes.bool,
   params: PropTypes.object,

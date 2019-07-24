@@ -2,13 +2,22 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
 
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faMicrophone, faVolumeUp, faVolumeOff } from '@fortawesome/free-solid-svg-icons';
+
+// speech-react
+
+import { ServiceManager } from 'speech-react';
+
+
 import Widget from './components/Widget';
 import { store, initStore } from '../src/store/store';
 import socket from './socket';
 
+
 const ConnectedWidget = (props) => {
   const sock = socket(props.socketUrl, props.customData, props.socketPath);
-  const storage = props.params.storage == "session" ? sessionStorage : localStorage
+  const storage = props.params.storage === 'session' ? sessionStorage : localStorage;
   initStore(
     props.inputTextFieldHint,
     props.connectingText,
@@ -16,6 +25,13 @@ const ConnectedWidget = (props) => {
     storage,
     props.docViewer,
   );
+  // Icons initialisieren
+
+  library.add(faMicrophone, faVolumeUp, faVolumeOff);
+
+  // console.log('ServiceManager.init');
+  ServiceManager.init({ errorOutputFlag: true });
+
   return (<Provider store={store}>
     <Widget
       socket={sock}
