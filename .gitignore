@@ -11,3 +11,7 @@ lib
 
 # Test files
 coverage
+
+# Credentials files
+credentials
+microsoft-credentials*

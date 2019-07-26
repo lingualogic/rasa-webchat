@@ -7,8 +7,8 @@ import { faMicrophone, faVolumeUp, faVolumeOff } from '@fortawesome/free-solid-s
 
 // speech-react
 
-import { ServiceManager } from 'speech-react';
-
+import { ServiceManager, MicrosoftModule, SPEECH_LISTEN_SERVICE } from 'speech-react';
+import { MICROSOFT_REGION, MICROSOFT_SUBSCRIPTION_KEY } from '../credentials/microsoft-credentials';
 
 import Widget from './components/Widget';
 import { store, initStore } from '../src/store/store';
@@ -29,8 +29,25 @@ const ConnectedWidget = (props) => {
 
   library.add(faMicrophone, faVolumeUp, faVolumeOff);
 
-  // console.log('ServiceManager.init');
-  ServiceManager.init({ errorOutputFlag: true });
+  // Speech-React
+
+  const microsoftOptions = {
+    microsoftRegion: MICROSOFT_REGION,
+    microsoftSubscriptionKey: MICROSOFT_SUBSCRIPTION_KEY,
+    errorOutputFlag: false
+  };
+
+  MicrosoftModule.init(microsoftOptions, (microsoftFlag) => {
+    // console.log('Microsoft:', microsoftFlag);
+    ServiceManager.init({ errorOutputFlag: false });
+    if (microsoftFlag) {
+      const listenService = ServiceManager.get(SPEECH_LISTEN_SERVICE);
+      if (listenService && listenService.setASR('ASRMicrosoft') === 0) {
+        console.log('Microsoft ASR');
+      }
+    }
+  }, false);
+
 
   return (<Provider store={store}>
     <Widget
